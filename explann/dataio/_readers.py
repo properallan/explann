@@ -13,19 +13,51 @@ class BaseImport:
         self.raw_data = self.data.copy(deep=True)
 
     def parse_levels(self,
-        levels : pd.DataFrame = None):
+        data : pd.DataFrame = None):
 
-        assert isinstance(levels, pd.DataFrame), "levels must be a pandas DataFrame"
+        assert isinstance(data, pd.DataFrame), "data must be a pandas DataFrame"
 
-        levels.index = levels.index.astype('str')
-        self.levels = levels
+        data.index = data.index.astype('str')
+        self.levels = data
 
+        parsed_data = self.data.copy(deep=True)
         pd.options.mode.chained_assignment = None  # default='warn'
-        for column in levels.keys():
-            for i,val in enumerate(self.data[column]):
-                self.data[column][i] = levels[column][f"{val}"]
+        for column in data.keys()[1:]:
+            for i,val in enumerate(self.raw_data[column]):
+                self.data[column][i] = data[column][f"{val}"]      
         pd.options.mode.chained_assignment = 'warn'  # default='warn'
     
+    
+    def parse_levels_from_string(self, 
+        data : str = None,
+        delimiter: str = None):
+
+        if delimiter is None:
+            try:
+                delimiter = self.delimiter
+            except:
+                delimiter = '\s'
+
+        assert isinstance(data, str), "levels must be a string"
+        
+        data = pd.read_csv(StringIO(data), index_col=0, delimiter=delimiter)
+
+        self.parse_levels(data)
+
+    def parse_levels_from_xlsx(self,
+        data: str = None,
+        sheet_name: str = None,
+        index_col: int = 0,
+    ):
+        assert isinstance(data, str), "path must be a string"
+        data = Path(data)
+        assert data.exists(), "path does not exist"
+        assert data.suffix == ".xlsx", "path must be a .xlsx file"
+
+        data = pd.read_excel(io=data, sheet_name=sheet_name, index_col=index_col)
+
+        self.parse_levels(data)
+
 class ImportString(BaseImport):
     def __init__(self, 
         data: str = None, 
@@ -36,24 +68,15 @@ class ImportString(BaseImport):
         assert isinstance(data, str), "data must be a string"
 
         data = pd.read_csv(StringIO(data), delimiter=delimiter, engine=engine,**kwargs)
-
-        super().__init__(data)
-
-    def parse_levels(self, 
-        levels : str = None,
-        delimiter: str = ";"):
-
-        assert isinstance(levels, str), "levels must be a string"
         
-        levels = pd.read_csv(StringIO(levels), delimiter=";", index_col=0)
+        self.delimiter = delimiter
 
-        super().parse_levels(levels)
-        
+        super().__init__(data)        
 
-class ImportXLSX:
+class ImportXLSX(BaseImport):
     def __init__(self,
         path: str = None,
-        sheet_name: str = None,
+        sheet_name: str = 0,
         **kwargs):
 
         assert isinstance(path, str), "path must be a string"
@@ -61,21 +84,8 @@ class ImportXLSX:
         assert path.exists(), "path does not exist"
         assert path.suffix == ".xlsx", "path must be a .xlsx file"
 
-
-        data = pd.read_excel(path, sheet_name=sheet_name, **kwargs)
+        data = pd.read_excel(io=path, sheet_name=sheet_name, **kwargs)
         
         super().__init__(data)
 
-    def parse_levels(self,
-        path: str = None,
-        sheet_name: str = None,
-    ):
-        assert isinstance(path, str), "path must be a string"
-        path = Path(path)
-        assert path.exists(), "path does not exist"
-        assert path.suffix == ".xlsx", "path must be a .xlsx file"
-
-        levels = pd.read_excel(path, sheet_name=sheet_name)
-        pd.options.mode.chained_assignment = None
-
-        super().parse_levels(levels)
+    
