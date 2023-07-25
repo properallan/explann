@@ -4,6 +4,35 @@ from typing import Any, Union
 from pathlib import Path
 
 class BaseImport:
+    """
+    Base class for importing data from a file or string.
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        Data to be imported.
+    
+    Attributes
+    ----------
+    data : pandas.DataFrame
+
+    raw_data : pandas.DataFrame
+
+    levels : pandas.DataFrame
+
+    delimiter : str
+
+    Methods
+    -------
+    parse_levels(data)
+        Parse levels from a pandas.DataFrame.
+
+    parse_levels_from_string(data, delimiter)
+        Parse levels from a string.
+
+    parse_levels_from_xlsx(path, sheet_name, index_col)
+        Parse levels from an xlsx file.
+    """
     def __init__(self, 
         data: pd.DataFrame = None):
 
