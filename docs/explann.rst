@@ -7,9 +7,26 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   explann.dataio
-   explann.models
-   explann.plot
+   explann.utils
+
+Submodules
+----------
+
+explann.dataio module
+---------------------
+
+.. automodule:: explann.dataio
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+explann.models module
+---------------------
+
+.. automodule:: explann.models
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Module contents
 ---------------

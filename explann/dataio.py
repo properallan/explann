@@ -5,11 +5,11 @@ from pathlib import Path
 
 class BaseImport:
     """
-    Base class for importing data from a file or string.
+        Base class for importing data from a file or string.
 
-    Parameters
-    ----------
-    data : pandas.DataFrame
+        Parameters
+        ----------
+        data : pandas.DataFrame
         Data to be imported.
     
     Attributes

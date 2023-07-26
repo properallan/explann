@@ -14,12 +14,13 @@ class LinearRegDiagnostic():
     """
     Diagnostic plots to identify potential problems in a linear regression fit.
     Mainly,
-        a. non-linearity of data
-        b. Correlation of error terms
-        c. non-constant variance
-        d. outliers
-        e. high-leverage points
-        f. collinearity
+    
+    a. non-linearity of data
+    b. Correlation of error terms
+    c. non-constant variance
+    d. outliers
+    e. high-leverage points
+    f. collinearity
 
     Authors:
         Prajwal Kafle (p33ajkafle@gmail.com, where 3 = r)
@@ -42,6 +43,7 @@ class LinearRegDiagnostic():
             * 'dof': D > 4 / (n - k - 1)
         (6) Fixed class name to conform to Pascal casing convention
         (7) Fixed Residuals vs Leverage legend to work with loc='best'
+        
     """
 
     def __init__(self,
