@@ -1,7 +1,7 @@
-matplotlib==3.7.2
-numpy==1.24.3
-pandas==2.0.2
-patsy==0.5.3
-scipy==1.11.1
-seaborn==0.12.2
-statsmodels==0.14.0
+matplotlib
+numpy
+pandas
+patsy
+scipy
+seaborn
+statsmodels
