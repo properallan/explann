@@ -5,3 +5,4 @@ patsy
 scipy
 seaborn
 statsmodels
+nbsphinx
