@@ -5,7 +5,7 @@ with open('requirements/main.txt') as f:
 
 setup(
     name='explann',
-    version='0.0.1',
+    version='0.0.0',
     description='EXperimental PLANNing python package for factorial design of experiments',
     author='Allan Moreira de Carvalho',
     author_email='properallan@gmail.com',
