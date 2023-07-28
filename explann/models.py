@@ -339,25 +339,6 @@ class FactorialModel(BaseModel):
                 })
 
             return dataframe
-        
-    def pareto_plot(self, function : Union[str,list,tuple]=None ):
-        if function is None:
-            function = self.function_names
-            if len(function) == 1:
-                function = function[0]
-            
-        if isinstance(function, list) or isinstance(function, tuple):
-            axes = {}
-            for function_i in function:
-                axes[function_i] = self.pareto_plot(function_i)
-            return axes
-        
-        elif isinstance(function, str):
-            model = self.model[function]
-            fig, ax = plt.subplots(figsize=(10,10))
-            ax = abs(model.params)[::-1].plot(kind='barh', ax=ax)
-            blabels = ax.bar_label(ax.containers[0], labels=model.params[::-1].round(4).astype(str).values, padding=5)
-            return ax
 
     def __getitem__(self, key):
         return self.model[key]

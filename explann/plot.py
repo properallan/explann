@@ -10,6 +10,46 @@ import statsmodels
 
 style_talk = 'seaborn-talk'    #refer to plt.style.available
 
+class ParetoPlot:
+    def __init__(self, model):
+        self.model = model
+
+    def plot(self, 
+        function : str|list|tuple=None, 
+        ax=None, 
+        ascending=True, 
+        figsize=(10,10),
+        **kwargs):
+        if function is None:
+            function = self.model.function_names
+            if len(function) == 1:
+                function = function[0]
+
+        if isinstance(function, list) or isinstance(function, tuple):
+            if ax is None:
+                ax = [None] * len(function)
+            axes = {}
+            for function_i,ax_i in zip(function,ax):
+                axes[function_i] = self.plot(function_i,ax=ax_i, ascending=ascending, figsize=figsize, **kwargs)
+            return axes
+        
+        elif isinstance(function, str):
+            model = self.model[function]
+            if ax is None:
+                fig, ax = plt.subplots(figsize=figsize)
+            
+            if 'title' in kwargs:
+                title = kwargs['title']
+                del kwargs['title']
+            else:
+                title = function
+
+            keys_sorted = model.params.abs().sort_values(ascending=ascending).keys()
+ 
+            ax = model.params.abs().sort_values(ascending=ascending).plot(kind='barh', title=title, ax=ax, **kwargs)
+            blabels = ax.bar_label(ax.containers[0], labels = model.params[keys_sorted].round(4).astype(str).values, padding=5)
+            return ax
+    
 class LinearRegDiagnostic():
     """
     Diagnostic plots to identify potential problems in a linear regression fit.

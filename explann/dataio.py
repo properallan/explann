@@ -53,7 +53,8 @@ class BaseImport:
         pd.options.mode.chained_assignment = None  # default='warn'
         for column in data.keys()[1:]:
             for i,val in enumerate(self.raw_data[column]):
-                self.data[column][i] = data[column][f"{val}"]      
+                
+                self.data[column][i] = data[column][f"{val}".rstrip('.0')]      
         pd.options.mode.chained_assignment = 'warn'  # default='warn'
     
     
