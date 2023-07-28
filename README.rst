@@ -1,4 +1,6 @@
-Python package for EXperimental PLANNing course. It implements an abstract class to handle multiple models built by `statsmodels`.
+Python package for EXperimental PLANNing course. It implements classes to build and analise statistical (mainly focused on factorial) models.  
+
+Statisctical models are built by `statsmodels`.
 
  
 Installation

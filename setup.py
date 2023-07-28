@@ -1,5 +1,8 @@
 from setuptools import setup
-  
+
+with open('requirements/main.txt') as f:
+    requirements = f.read().splitlines()
+
 setup(
     name='explann',
     version='0.0.1',
@@ -7,8 +10,5 @@ setup(
     author='Allan Moreira de Carvalho',
     author_email='properallan@gmail.com',
     packages=['explann'],
-    install_requires=[
-        'numpy',
-        'pandas',
-    ],
+    install_requires= requirements,
 )
