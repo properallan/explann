@@ -10,7 +10,7 @@ If you have `git` and installed, just clone this repository
 
 ::
 
-    git clone https://github.com/properallan/explann```
+    git clone https://github.com/properallan/explann
 
 move to the root folder
 
