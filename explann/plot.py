@@ -7,9 +7,9 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 import matplotlib.pyplot as plt
 from typing import Type
 import statsmodels
-
+from scipy.interpolate import CubicSpline
 style_talk = 'seaborn-talk'    #refer to plt.style.available
-
+import pandas as pd
 class ParetoPlot:
     def __init__(self, model):
         self.model = model
@@ -17,8 +17,10 @@ class ParetoPlot:
     def plot(self, 
         function : str|list|tuple=None, 
         ax=None, 
-        ascending=True, 
-        figsize=(10,10),
+        ascending:bool=True, 
+        figsize:tuple=(10,10),
+        attribute:str='tvalues',
+        alpha:float=0.05,
         **kwargs):
         if function is None:
             function = self.model.function_names
@@ -30,11 +32,11 @@ class ParetoPlot:
                 ax = [None] * len(function)
             axes = {}
             for function_i,ax_i in zip(function,ax):
-                axes[function_i] = self.plot(function_i,ax=ax_i, ascending=ascending, figsize=figsize, **kwargs)
+                axes[function_i] = self.plot(function_i,ax=ax_i, ascending=ascending, figsize=figsize, attribute=attribute, alpha=alpha, **kwargs)
             return axes
         
         elif isinstance(function, str):
-            model = self.model[function]
+            
             if ax is None:
                 fig, ax = plt.subplots(figsize=figsize)
             
@@ -44,10 +46,43 @@ class ParetoPlot:
             else:
                 title = function
 
-            keys_sorted = model.params.abs().sort_values(ascending=ascending).keys()
- 
-            ax = model.params.abs().sort_values(ascending=ascending).plot(kind='barh', title=title, ax=ax, **kwargs)
-            blabels = ax.bar_label(ax.containers[0], labels = model.params[keys_sorted].round(4).astype(str).values, padding=5)
+            if attribute == 'anova':
+                model = self.model
+                signed_values = model.anova(function)['F'].dropna()
+                sorted_values = signed_values.abs().sort_values(ascending=ascending)
+                pvalues = model.anova(function)['PR(>F)'].dropna()
+                
+            elif attribute == 'tvalues':
+                model = self.model[function]
+                signed_values = model.__getattribute__(attribute)
+                sorted_values = signed_values.abs().sort_values(ascending=ascending)
+                pvalues = model.__getattribute__('pvalues')
+            
+            keys_sorted = sorted_values.keys()
+
+            ax = sorted_values.plot(kind='barh', title=title, ax=ax, **kwargs)
+            
+            sorted_index = sorted_values.index
+            sorted_pvalues = pvalues[sorted_index]
+            
+            if sorted_pvalues.is_monotonic_decreasing:
+                pvalues = sorted_pvalues[::-1]
+                values = sorted_values[::-1]
+            else:
+                pvalues = sorted_pvalues
+                values = sorted_values
+            spl = CubicSpline(pvalues, values)
+            value = spl(alpha)
+            value
+            
+            value = abs(value)
+            ax.axvline(value, color='k', linestyle='--')
+            ax.text(value, -0.01, f'p={alpha:.2f}', transform=ax.get_xaxis_transform(),
+            ha='center', va='top')
+            ax.xaxis.set_visible(False)
+
+            blabels = ax.bar_label(ax.containers[0], labels = signed_values[keys_sorted].round(4).astype(str).values, padding=5)
+            
             return ax
     
 class LinearRegDiagnostic():

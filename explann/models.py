@@ -24,7 +24,8 @@ class FactorialModel(BaseModel):
     def __init__(self, 
         data : pd.DataFrame = None, 
         functions : Union[str,list,tuple] = None,
-        statsmodel : object = ols,):
+        statsmodel : object = ols,
+        **fit_kwargs):
 
         self.data = data
         self.model = {}
@@ -34,13 +35,17 @@ class FactorialModel(BaseModel):
         self.model = self.fit(
             data=data,
             functions=functions, 
-            statsmodel=statsmodel
+            statsmodel=statsmodel,
+            **fit_kwargs,
         )
+
+        self.use_anova = False
 
     def fit(self, 
         data : pd.DataFrame = None,
         functions : Union[str,list,tuple] = None,
         statsmodel : object = ols,
+        **fit_kwargs
         ):
 
         if isinstance(functions, str):
@@ -53,7 +58,7 @@ class FactorialModel(BaseModel):
                 splited = function.split('~')
                 function_name = splited[0].strip()
                 function_body = splited[1].strip()
-                model_dict[key] = self.statsmodel(function, data).fit()
+                model_dict[key] = self.statsmodel(function, data).fit(**fit_kwargs)
         else:
             print('must provide function formulas')
 
@@ -70,7 +75,7 @@ class FactorialModel(BaseModel):
 
     def print_equation(self, 
             function : Union[str, list,tuple] = None,
-            pvalue : float = 0.05,
+            alpha : float = 0.05,
             precision : int = 4):
         
         if function is None:
@@ -81,12 +86,12 @@ class FactorialModel(BaseModel):
         if isinstance(function, list) or isinstance(function, tuple):
             return_dict = {}
             for function_name_i in function:
-                return_dict[function_name_i] = self.print_equation(function_name_i, pvalue=pvalue, precision=precision)
+                return_dict[function_name_i] = self.print_equation(function_name_i, alpha=alpha, precision=precision)
                 
             return return_dict
         
         elif isinstance(function, str):
-            sig = self.get_significant_terms(function=function, pvalue=pvalue)
+            sig = self.get_significant_terms(function=function, alpha=alpha)
             equation = []
             for s_i,v_i in zip(sig, self.model[function].params[sig]):
                 equation.append( f"{v_i:.{precision}f} * {s_i}".
@@ -98,7 +103,13 @@ class FactorialModel(BaseModel):
         
     def get_significant_model_functions(self,
         function : Union[str,list,tuple]=None,
-        pvalue : float = 0.05):
+        alpha : float = 0.05,
+        use_anova : bool = False):
+
+        if use_anova:
+            self.use_anova = True
+        else:
+            self.use_anova = False
 
         if function is None:
             function = self.function_names
@@ -107,7 +118,7 @@ class FactorialModel(BaseModel):
         if isinstance(function, str):
             function = [function]
 
-        significant_terms = self.get_significant_terms(function=function, pvalue=pvalue)
+        significant_terms = self.get_significant_terms(function=function, alpha=alpha)
 
         lhs = lambda x: x.split("~")[0].strip()
 
@@ -115,8 +126,13 @@ class FactorialModel(BaseModel):
 
         return significant_model_functions_dict
         
-    def build_significant_models(self, function : Union[str,list,tuple]=None, pvalue : float = 0.05):
-        significant_model_functions_dict = self.get_significant_model_functions(function=function, pvalue=pvalue)
+    def build_significant_models(
+            self, 
+            function : Union[str,list,tuple]=None, 
+            alpha : float = 0.05,
+            use_anova : bool = False):
+        
+        significant_model_functions_dict = self.get_significant_model_functions(function=function, alpha=alpha, use_anova=use_anova)
         significant_models = FactorialModel(
             data=self.data, 
             functions=significant_model_functions_dict, 
@@ -125,7 +141,7 @@ class FactorialModel(BaseModel):
                                
     def get_significant_terms(self, 
             function : Union[str,list,tuple]=None,
-            pvalue : float = 0.05):
+            alpha : float = 0.05):
         
         if function is None:
             function = self.function_names
@@ -135,10 +151,19 @@ class FactorialModel(BaseModel):
         if isinstance(function, list) or isinstance(function, tuple):
             return_dict = {}
             for function_i in function:
-                return_dict[function_i] = self.get_significant_terms(function_i, pvalue=pvalue) 
+                return_dict[function_i] = self.get_significant_terms(function_i, alpha=alpha) 
             return return_dict
         else:
-            return [k for k,v in self.model[function].pvalues.items() if v<=pvalue ]
+            if self.use_anova:
+                pvalues = self.anova(function)['PR(>F)'].dropna()
+                terms = [k for k,v in pvalues.items() if v<=alpha ]
+                terms.append('Intercept')
+            else:
+                pvalues = self.model[function].pvalues
+                terms = [k for k,v in pvalues.items() if v<=alpha ]
+
+                
+            return terms
         
     def summary(self, function : Union[str,list,tuple]=None):
         if function is None:

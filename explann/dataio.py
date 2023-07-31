@@ -51,10 +51,10 @@ class BaseImport:
 
         parsed_data = self.data.copy(deep=True)
         pd.options.mode.chained_assignment = None  # default='warn'
-        for column in data.keys()[1:]:
+        for column in data.keys():
             for i,val in enumerate(self.raw_data[column]):
                 
-                self.data[column][i] = data[column][f"{val}".rstrip('.0')]      
+                self.data[column][i] = data[column][f"{val}"]      
         pd.options.mode.chained_assignment = 'warn'  # default='warn'
     
     
@@ -91,6 +91,7 @@ class BaseImport:
 class ImportString(BaseImport):
     def __init__(self, 
         data: str = None, 
+        levels: str = None,
         delimiter: str = "\s",
         engine: str = "python",
         **kwargs):
@@ -101,12 +102,17 @@ class ImportString(BaseImport):
         
         self.delimiter = delimiter
 
-        super().__init__(data)        
+        super().__init__(data)    
+
+        if levels is not None:
+            self.levels = pd.read_csv(StringIO(levels), delimiter=delimiter, engine=engine,**kwargs)
+            self.parse_levels(self.levels)    
 
 class ImportXLSX(BaseImport):
     def __init__(self,
         path: str = None,
-        sheet_name: str = 0,
+        data_sheet: str = 0,
+        levels_sheet: str = None,
         **kwargs):
 
         assert isinstance(path, str), "path must be a string"
@@ -114,8 +120,14 @@ class ImportXLSX(BaseImport):
         assert path.exists(), "path does not exist"
         assert path.suffix == ".xlsx", "path must be a .xlsx file"
 
-        data = pd.read_excel(io=path, sheet_name=sheet_name, **kwargs)
-        
+        data = pd.read_excel(io=path, sheet_name=data_sheet, **kwargs)
+
         super().__init__(data)
+
+        if levels_sheet is not None:
+            if 'index_col' not in kwargs:
+                kwargs['index_col'] = 0
+            self.levels = pd.read_excel(io=path, sheet_name=levels_sheet, **kwargs)
+            self.parse_levels(self.levels)
 
     
