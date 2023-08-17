@@ -1,0 +1,61 @@
+################################################################################
+                           -*- Q1D Euler Solver -*-
+Eigen 3.3.7
+Allan Moreira de Carvalho
+################################################################################
+                           -*- Setup Information -*-
+################################################################################
+# Domain x-coordinates at cell faces (no need for ghost cells)
+/home/ppiper/ihtc_repository/data/experimental_planning_T0in_limit/38/Q1D/inputs/xn.txt
+# Area distributuin at cell faces (no need for ghost cells)
+/home/ppiper/ihtc_repository/data/experimental_planning_T0in_limit/38/Q1D/inputs/Sn.txt
+# Inlet Total Pressure [Pa]
+700000.0
+# Inlet Total Temperature [K]
+399.9999999999999
+# Inlet Mach Number
+0.01
+# Outlet Static Pressure [Pa]
+101000.0
+# Gas constant [J/kg/K]
+287.0491267875601
+# Specific heat ratio
+1.4012185089887348
+# Maximum number of iterations 
+50000
+# Interval to print iterations 
+1000
+# CFL number 
+0.15
+# Convergence criteria 
+1e-08
+# Time integration scheme (Euler, RK4) 
+RK4
+# Flux scheme (Basic, Roe, Split, SplitTVD, VanLeer, LaxFriedrichs, StegerWarming, AUSM) 
+AUSM
+# Timestep type (Global, Local) 
+Global
+# Form to be solved (Dimensional, Dimensionless) 
+Dimensionless
+# Set output directory 
+/home/ppiper/ihtc_repository/data/experimental_planning_T0in_limit/38/Q1D/outputs/
+################################################################################
+                           -*- Start Solving -*-
+################################################################################
+	 	 	     Maximum Residue
+Iteration 	Mass		Momentum	Energy
+1000		0.000494487	0.00113886	0.00230997
+2000		8.05687e-06	2.07514e-05	3.09255e-05
+3000		1.27357e-05	1.18641e-05	2.52076e-05
+4000		2.79226e-06	4.31561e-06	1.66903e-05
+5000		2.54906e-06	3.12212e-06	8.52129e-06
+6000		1.12006e-06	1.51688e-06	3.96077e-06
+7000		4.15684e-07	6.13466e-07	1.51716e-06
+8000		1.31125e-07	2.28491e-07	4.75284e-07
+9000		2.71009e-08	8.18663e-08	1.03736e-07
+10000		2.01754e-08	2.96136e-08	5.91524e-08
+11000		1.43843e-08	1.78152e-08	4.68471e-08
+12000		7.87374e-09	1.0125e-08	2.72408e-08
+################################################################################
+                           -*- Saving Results -*-
+################################################################################

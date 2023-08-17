@@ -3,4 +3,5 @@ Examples
 
 .. nbgallery::
    notebooks/explann_tutorial
-   notebooks/paper_using_explann
+   notebooks/Experimental_Planning_Case_Study
+   notebooks/Experimental_Planning_Proposal_Study

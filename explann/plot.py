@@ -5,23 +5,34 @@ from statsmodels.tools.tools import maybe_unwrap_results
 from statsmodels.graphics.gofplots import ProbPlot
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 import matplotlib.pyplot as plt
-from typing import Type
+from typing import Type,Union
 import statsmodels
-from scipy.interpolate import CubicSpline
+from scipy.interpolate import interp1d
 style_talk = 'seaborn-talk'    #refer to plt.style.available
 import pandas as pd
+from matplotlib import cm # for a scatter plot
+from mpl_toolkits.mplot3d import Axes3D
+
 class ParetoPlot:
     def __init__(self, model):
         self.model = model
 
     def plot(self, 
-        function : str|list|tuple=None, 
+        function : Union[str,list,tuple]=None, 
         ax=None, 
         ascending:bool=True, 
         figsize:tuple=(10,10),
-        attribute:str='tvalues',
+        attribute:str='params',
         alpha:float=0.05,
+        vline:bool=True,
         **kwargs):
+
+        try:
+            if len(ax) > 0:
+                ax = ax.flatten()
+        except:
+            pass
+
         if function is None:
             function = self.model.function_names
             if len(function) == 1:
@@ -52,33 +63,51 @@ class ParetoPlot:
                 sorted_values = signed_values.abs().sort_values(ascending=ascending)
                 pvalues = model.anova(function)['PR(>F)'].dropna()
                 
-            elif attribute == 'tvalues':
+            elif attribute in ['tvalues','params']:
                 model = self.model[function]
                 signed_values = model.__getattribute__(attribute)
                 sorted_values = signed_values.abs().sort_values(ascending=ascending)
                 pvalues = model.__getattribute__('pvalues')
             
+
             keys_sorted = sorted_values.keys()
 
-            ax = sorted_values.plot(kind='barh', title=title, ax=ax, **kwargs)
             
-            sorted_index = sorted_values.index
-            sorted_pvalues = pvalues[sorted_index]
+            #ax = sorted_values.plot(kind='barh', title=title, ax=ax, **kwargs)
             
-            if sorted_pvalues.is_monotonic_decreasing:
-                pvalues = sorted_pvalues[::-1]
-                values = sorted_values[::-1]
-            else:
-                pvalues = sorted_pvalues
-                values = sorted_values
-            spl = CubicSpline(pvalues, values)
-            value = spl(alpha)
-            value
+            if vline:
+                sorted_index = sorted_values.index
+                sorted_pvalues = pvalues[sorted_index]
+                
+                if sorted_pvalues.is_monotonic_decreasing:
+                    pvalues = sorted_pvalues[::-1]
+                    values = sorted_values[::-1]
+                else:
+                    pvalues = sorted_pvalues
+                    values = sorted_values
+                #spl = CubicSpline(pvalues, values)
+                #value = abs(spl(alpha))
+
+                spl = interp1d(pvalues, values, kind='linear', fill_value='extrapolate')
+                value = abs(spl(alpha))
+
+                ax.axvline(value, color='k', linestyle='--')
+                ax.text(value, -0.01, f'p={alpha:.2f}', transform=ax.get_xaxis_transform(),
+                ha='center', va='top')
+
+            threshold = value
+            # split it up
+            #above_threshold = np.maximum(sorted_values - threshold, 0)
+            above_threshold = sorted_values[sorted_values >= threshold]
+            #below_threshold = np.minimum(sorted_values, threshold)
+            below_threshold = sorted_values[sorted_values < threshold]
             
-            value = abs(value)
-            ax.axvline(value, color='k', linestyle='--')
-            ax.text(value, -0.01, f'p={alpha:.2f}', transform=ax.get_xaxis_transform(),
-            ha='center', va='top')
+            #ax = below_threshold.plot(kind='barh', title=title, ax=ax, color="r", **kwargs)
+            #ax = above_threshold.plot(kind='barh', title=title, ax=ax, color="g", **kwargs)
+            
+            colors = ["tab:green" if val > threshold else "tab:red" for val in sorted_values]
+            ax = sorted_values.plot(kind='barh', title=title, ax=ax, color=colors, **kwargs)
+                
             ax.xaxis.set_visible(False)
 
             blabels = ax.bar_label(ax.containers[0], labels = signed_values[keys_sorted].round(4).astype(str).values, padding=5)
@@ -401,3 +430,56 @@ class LinearRegDiagnostic():
             quant_index += 1
             previous_is_negative = is_negative
             yield resid_index, x, y
+
+
+
+def plot_surface(x, y, z, model, n_pts=10, other_params={}, labels:dict=None, ax=None, cmap='viridis', scaled=False):
+    name_z = z #'Fso'
+    name_x = x #'U'
+    name_y = y #'Y'
+    n_pts = 10
+    if not scaled:
+        X = np.linspace( model.data[name_x].min(), model.data[name_x].max(), n_pts)
+        Y = np.linspace( model.data[name_y].min(), model.data[name_y].max(), n_pts)
+    else:
+        X = np.linspace( model.levels[name_x].min(), model.levels[name_x].max(), n_pts)
+        Y = np.linspace( model.levels[name_y].min(), model.levels[name_y].max(), n_pts)
+        
+    x, y = np.meshgrid(X, Y)
+        
+    try:
+        variables = pd.DataFrame({name_x:x.ravel(), name_y:y.ravel(), **other_params})
+    except:
+        variables = pd.DataFrame([{name_x:x.ravel(), name_y:y.ravel(), **other_params}])
+        
+    if not scaled:
+        z = model.predict(name_z, variables).values.reshape(x.shape)
+    else:
+        z = model.predict_rescaled(name_z, variables).values.reshape(x.shape)
+    
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(6,6),subplot_kw={"projection": "3d"})
+    else:
+        fig = plt.gcf()
+    ax.set_box_aspect(None, zoom=0.8)
+    
+    pax = ax.plot_surface(x, y, z, cmap=cmap, edgecolor='black', linewidth=0.5, alpha=0.6, antialiased=True)
+    #ax.contour(x, y, z, cmap=cmap, linestyles='solid', alpha=1)
+    ax.contourf(x, y, z, zdir='z', offset=ax.get_zlim()[0], cmap=cmap, alpha=0.5,  antialiased=True)
+    ax.contourf(x, y, z, zdir='x', offset=ax.get_xlim()[0], cmap=cmap, alpha=0.5,  antialiased=True)
+    ax.contourf(x, y, z, zdir='y', offset=ax.get_ylim()[1], cmap=cmap, alpha=0.5,  antialiased=True)
+    
+    if labels is not None:
+        ax.set(**labels)
+        ax.zaxis.set_rotate_label(True)
+        ax.xaxis.set_rotate_label(True)
+        ax.yaxis.set_rotate_label(True)
+        
+    try:
+        if 'zlabel' in labels:
+            zlabel=labels['zlabel']
+    except:
+        zlabel=None  
+        
+        
+    fig.colorbar(pax, ax=ax, location='top', fraction=0.04, pad=-0.05, label=zlabel)

@@ -25,12 +25,14 @@ class FactorialModel(BaseModel):
         data : pd.DataFrame = None, 
         functions : Union[str,list,tuple] = None,
         statsmodel : object = ols,
+        levels : pd.DataFrame = None,
         **fit_kwargs):
 
         self.data = data
         self.model = {}
         self.statsmodel = statsmodel
         self.functions = functions
+        self.levels = levels
 
         self.model = self.fit(
             data=data,
@@ -69,6 +71,10 @@ class FactorialModel(BaseModel):
         return list(self.model.keys())
     
     @property
+    def dependent_variables(self):
+        return [function.split('~')[0].strip() for function in self.functions.values()]
+    
+    @property
     def independent_variables(self):
         lhs = [function.split('~')[0].strip() for function in self.functions.values()]
         return [key for key in self.data.keys() if key not in lhs]
@@ -97,9 +103,12 @@ class FactorialModel(BaseModel):
                 equation.append( f"{v_i:.{precision}f} * {s_i}".
                 replace(':', '').replace('Intercept', '1') )
             
-            final_equation = ' + '.join(equation).replace('-',' - ').replace(' * 1', '').replace(' +  -', ' -').replace(' * ', ' ').replace('  ', ' ')
+            #final_equation = ' + '.join(equation).replace('-',' - ').replace(' * 1', '').replace(' +  -', ' -').replace(' * ', ' ').replace('  ', ' ')
+            final_equation = ' + '.join(equation).replace('-',' - ').replace(' * 1', '').replace(' +  -', ' -').replace('  ', ' ')
             
-            return f"{function} = {final_equation}".replace('  ', ' ')
+            lhs = lambda x: x.split("~")[0].strip()
+            lhs = lhs(self.functions[function])
+            return f"{lhs} = {final_equation}".replace('  ', ' ')
         
     def get_significant_model_functions(self,
         function : Union[str,list,tuple]=None,
@@ -136,7 +145,8 @@ class FactorialModel(BaseModel):
         significant_models = FactorialModel(
             data=self.data, 
             functions=significant_model_functions_dict, 
-            statsmodel=self.statsmodel)
+            statsmodel=self.statsmodel, 
+            levels=self.levels)
         return significant_models
                                
     def get_significant_terms(self, 
@@ -282,7 +292,7 @@ class FactorialModel(BaseModel):
                 'mean_sq':[regression_mean_sq, residual_mean_sq, lack_of_fit_mean_sq, pure_error_mean_sq, None],
                 'F':[regression_F, None, lack_of_fit_F, None, None],
                 'F_table':[return_dict[key]['regression_table_F'], None, return_dict[key]['lack_of_fit_table_F'], None, None],
-                'p':[return_dict[key]['regression_p'], None, return_dict[key]['lack_of_fit_p'], None, None],
+            #    'p':[return_dict[key]['regression_p'], None, return_dict[key]['lack_of_fit_p'], None, None],
             })
 
             return_dict[key]['dataframe'] = dataframe
@@ -364,8 +374,68 @@ class FactorialModel(BaseModel):
                 })
 
             return dataframe
+        
+    def get_categorical_model(self):
+        functions = self.get_categorical_functions()
+        factor_data = self.data.copy()
 
+        factor_model = FactorialModel(
+                data = factor_data,
+                functions = functions,
+                statsmodel = self.statsmodel
+            )
+        
+        return factor_model
+    
+    def get_categorical_functions(self):
+        function = self.function_names
+
+        functions = {key:add_categorical(val) for key,val in self.functions.items() if key in function}
+
+        return functions
+    
     def __getitem__(self, key):
         return self.model[key]
     
-    
+    def predict(self, function, variables):
+        return self.model[function].predict(variables)
+
+    def encode_variables(self, variables, levels: pd.DataFrame = None):
+        # get variables and return corresponding codes
+        if levels is None:
+            levels = self.levels
+
+        variables_coded = {}
+        for var, value in variables.items():
+            if var in levels.keys():
+               variables_coded[var] = np.interp(
+                    value, 
+                    levels[f'{var}'].values, 
+                    [float(lvl) for lvl in levels.index.values])
+
+        return variables_coded
+                 
+    def decode_variables(self, variables, levels: pd.DataFrame = None):
+        # get coded variables and return corresponding values
+        if levels is None:
+            levels = self.levels
+            
+        variables_decoded = {}
+        for var, value in variables.items():
+            if var in levels.keys():
+               variables_decoded[var] = np.interp(
+                    value, 
+                    [float(lvl) for lvl in levels.index.values],
+                    levels[f'{var}'].values )
+               
+        return variables_decoded
+
+
+    def predict_rescaled(self, function, variables, levels: pd.DataFrame = None):
+        if levels is None:
+            levels = self.levels
+
+        variables_coded = self.encode_variables( variables, levels=levels)
+        return self.predict(function, variables_coded)
+        
+        
