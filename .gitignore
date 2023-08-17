@@ -161,3 +161,21 @@ cython_debug/
 
 # ignore bibliography contents
 data/bibliography
+
+# ignore bibliography contents
+data/bibliography
+
+# ignore data files
+*.h5
+*.hdf5
+*.vtm
+*.vtu
+*.zip
+*.geo
+*.msh
+*.su2
+*.vtk
+*.rar
+
+# keep this folder
+!data/lhs/*

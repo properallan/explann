@@ -1,0 +1,34 @@
+# Domain x-coordinates at cell faces (no need for ghost cells)
+/home/ppiper/ihtc_repository/data/experimental_planning_T0in_limit/2/Q1D/inputs/xn.txt
+# Area distributuin at cell faces (no need for ghost cells)
+/home/ppiper/ihtc_repository/data/experimental_planning_T0in_limit/2/Q1D/inputs/Sn.txt
+# Inlet Total Pressure [Pa]
+573865.5377119428
+# Inlet Total Temperature [K]
+472.4439740466428
+# Inlet Mach Number
+0.01
+# Outlet Static Pressure [Pa]
+101000.0
+# Gas constant [J/kg/K]
+287.0491267875601
+# Specific heat ratio
+1.3925820701750395
+# Maximum number of iterations 
+50000
+# Interval to print iterations 
+1000
+# CFL number 
+0.15
+# Convergence criteria 
+1e-08
+# Time integration scheme (Euler, RK4) 
+RK4
+# Flux scheme (Basic, Roe, Split, SplitTVD, VanLeer, LaxFriedrichs, StegerWarming, AUSM) 
+AUSM
+# Timestep type (Global, Local) 
+Global
+# Form to be solved (Dimensional, Dimensionless) 
+Dimensionless
+# Set output directory 
+/home/ppiper/ihtc_repository/data/experimental_planning_T0in_limit/2/Q1D/outputs/
